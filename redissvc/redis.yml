@@ -1,0 +1,66 @@
+redis:
+  # =========================
+  # 会话缓存 Redis 实例
+  # 用途：用户登录态、Session、Token 等短生命周期数据
+  # =========================
+  session:
+    # 实例名称（用于注册表 / 日志 / 监控标识）
+    name: "session"
+    # Redis 部署模式
+    # standalone | sentinel | cluster
+    mode: "standalone"
+    # Redis 地址
+    # standalone: host:port
+    # sentinel/cluster: 多地址用逗号分隔
+    addr: "localhost:6379"
+    # Redis 访问密码（无密码留空）
+    password: ""
+    # 使用的 Redis DB 编号
+    # 建议不同业务使用不同 DB 隔离
+    db: 0
+    # 连接池最大连接数
+    pool_size: 10
+    # 连接池最小空闲连接数
+    min_idle_conns: 5
+    # 连接池最大空闲连接数
+    max_idle_conns: 10
+    # 建立连接超时时间
+    dial_timeout: 5s
+    # 读超时时间（避免阻塞）
+    read_timeout: 3s
+    # 写超时时间
+    write_timeout: 3s
+    # 从连接池获取连接的最大等待时间
+    pool_timeout: 4s
+
+
+  # =========================
+  # 购物车缓存 Redis 实例
+  # 用途：购物车、临时订单、用户操作状态
+  # 特点：读写频繁、并发高
+  # =========================
+  cart:
+    # 实例名称
+    name: "cart"
+    # Redis 部署模式
+    mode: "standalone"
+    # Redis 地址
+    addr: "localhost:6379"
+    # Redis 访问密码
+    password: ""
+    # 使用独立 DB，避免与 session 数据混用
+    db: 1
+    # 更大的连接池，支撑高并发读写
+    pool_size: 20
+    # 最小空闲连接数
+    min_idle_conns: 10
+    # 最大空闲连接数
+    max_idle_conns: 20
+    # 连接超时时间
+    dial_timeout: 5s
+    # 读超时时间
+    read_timeout: 3s
+    # 写超时时间
+    write_timeout: 3s
+    # 连接池等待超时时间
+    pool_timeout: 4s
