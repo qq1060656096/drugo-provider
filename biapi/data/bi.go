@@ -3,8 +3,8 @@ package data
 import (
 	"context"
 
+	"github.com/qq1060656096/bizutil/qsql"
 	"github.com/qq1060656096/drugo-provider/biapi/biz"
-	"github.com/qq1060656096/drugo-provider/pkg/qsql"
 	"github.com/qq1060656096/drugo/drugo"
 	"go.uber.org/zap"
 

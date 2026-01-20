@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/qq1060656096/drugo-provider/pkg/qsql"
+	"github.com/qq1060656096/bizutil/qsql"
 	"gorm.io/gorm"
 )
 

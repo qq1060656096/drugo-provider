@@ -11,7 +11,7 @@ dbSvc := ginsrv.MustGetService[*drugo.Drugo, *dbsvc.DbService](c, dbsvc.Name)
 db := dbSvc.Manager().MustGroup("public").MustGet(c.Request.Context(), "test_common")
 companyInfo := make(map[string]interface{})
 db.Raw("select * from common_company where company_id= 218908").Scan(&companyInfo)
-// 设置redis
+// 获取 redis 缓存
 redisSvc := ginsrv.MustGetService[*drugo.Drugo, *redissvc.RedisService](c, redissvc.Name)
 r, err := redisSvc.Group().MustGet(c, "session").Set(c.Request.Context(), "api", "demo", 0).Result()
 ```
