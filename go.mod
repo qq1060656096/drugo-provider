@@ -6,8 +6,8 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/qq1060656096/bizutil v0.0.2
 	github.com/qq1060656096/drugo v0.0.0-20260114150916-0116f3b98c10
-	github.com/qq1060656096/mgorm v0.0.2
-	github.com/qq1060656096/mgredis v0.0.0-20260118025626-3042ae09a655
+	github.com/qq1060656096/mgorm v0.0.1
+	github.com/qq1060656096/mgredis v0.0.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.1

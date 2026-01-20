@@ -140,10 +140,10 @@ github.com/qq1060656096/bizutil v0.0.2 h1:954ZsY7LbHqHWXzTcAY7umZIZ+Z+qFJfnO2zFj
 github.com/qq1060656096/bizutil v0.0.2/go.mod h1:gZPxywyV0tFhvM7K+bIWn8ZMXFSQP7MltRhxYrcg9/M=
 github.com/qq1060656096/drugo v0.0.0-20260114150916-0116f3b98c10 h1:d2jDPRlYoaAuwLbQY0/UvuRcwgVs92IWCxnnRktar/o=
 github.com/qq1060656096/drugo v0.0.0-20260114150916-0116f3b98c10/go.mod h1:YAm2FMivqCm1tfrnA39vasXcF19x0v07X0wFPJuA+bA=
-github.com/qq1060656096/mgorm v0.0.2 h1:DMJDISnAd2EnBfgIZMbM0sVSDU78+tJsIh89RbJUqGQ=
-github.com/qq1060656096/mgorm v0.0.2/go.mod h1:TGkPgqiTCKFA82SINMdr9fhVgs59iW0iCGTQHRUzX1o=
-github.com/qq1060656096/mgredis v0.0.0-20260118025626-3042ae09a655 h1:mTqp19g/G+vfDPUM7EeZek9njpVQn3PHXFkdQajj0js=
-github.com/qq1060656096/mgredis v0.0.0-20260118025626-3042ae09a655/go.mod h1:oudIVww/AcHjrU7s5Ul/mbvYhX/aYu56a4rPtlBCrnU=
+github.com/qq1060656096/mgorm v0.0.1 h1:5Agi/sfI44uAEX+b2jPSA+Xiw4buS7YWO5y56QrTxIw=
+github.com/qq1060656096/mgorm v0.0.1/go.mod h1:6t29bJ0vby4+AYe8qH3tXanUaDHNly0WahJHau8PNLA=
+github.com/qq1060656096/mgredis v0.0.1 h1:dFfrEOood4EY35miAYZHAls56mwgodO2ASRxayflkJw=
+github.com/qq1060656096/mgredis v0.0.1/go.mod h1:oudIVww/AcHjrU7s5Ul/mbvYhX/aYu56a4rPtlBCrnU=
 github.com/quic-go/qpack v0.5.1 h1:giqksBPnT/HDtZ6VhtFKgoLOWmlyo9Ei6u9PqzIMbhI=
 github.com/quic-go/qpack v0.5.1/go.mod h1:+PC4XFrEskIVkcLzpEkbLqq1uCoxPhQuvK5rH1ZgaEg=
 github.com/quic-go/quic-go v0.54.0 h1:6s1YB9QotYI6Ospeiguknbp2Znb/jZYjZLRXn9kMQBg=
