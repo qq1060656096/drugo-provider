@@ -141,7 +141,12 @@ func (s *GinService) Run(ctx context.Context) error {
 			WriteTimeout: writeTimeout,
 			IdleTimeout:  idleTimeout,
 		}
+		url := fmt.Sprintf("http://%s:%d", s.config.Host, s.config.Http.Port)
+		if s.config.Host == "" || s.config.Host == "0.0.0.0" {
+			url = fmt.Sprintf("http://%s:%d", "localhost", s.config.Http.Port)
+		}
 		logger.Info("starting http server",
+			zap.String("url", url),
 			zap.String("addr", s.httpServer.Addr),
 			zap.String("protocol", "http"),
 			zap.Duration("read_timeout", readTimeout),
