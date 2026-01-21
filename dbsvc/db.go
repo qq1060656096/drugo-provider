@@ -22,10 +22,10 @@ var _ kernel.Service = (*DbService)(nil)
 
 // DbService 通过 mgorm.Manager 管理多个数据库连接。
 type DbService struct {
-	name   string
-	config *viper.Viper
-	logger *zap.Logger
-	mgorm  mgorm.Manager
+	name    string
+	config  *viper.Viper
+	logger  *zap.Logger
+	manager mgorm.Manager
 
 	once    sync.Once
 	bootErr error
@@ -54,7 +54,7 @@ func (s *DbService) Boot(ctx context.Context) error {
 
 // boot 执行实际的初始化逻辑。
 func (s *DbService) boot(ctx context.Context) error {
-	s.mgorm = mgorm.NewManager()
+	s.manager = mgorm.NewManager()
 
 	k := kernel.MustFromContext(ctx)
 
@@ -99,7 +99,7 @@ func (s *DbService) boot(ctx context.Context) error {
 
 // registerDB 将单个数据库连接注册到指定的分组。
 func (s *DbService) registerDB(ctx context.Context, groupName, dbName string) error {
-	s.mgorm.AddGroup(groupName)
+	s.manager.AddGroup(groupName)
 
 	groupCfg := s.config.Sub(groupName)
 	if groupCfg == nil {
@@ -124,14 +124,17 @@ func (s *DbService) registerDB(ctx context.Context, groupName, dbName string) er
 		zap.String("driver", cfg.DriverType),
 	)
 
-	s.mgorm.MustGroup(groupName).Register(ctx, dbName, cfg)
-
+	s.manager.MustGroup(groupName).Register(ctx, dbName, cfg)
+	err = s.manager.MustGroup(groupName).Ping(ctx, dbName)
+	if err != nil {
+		s.logger.Error("failed to ping db", zap.String("group", groupName), zap.String("db", dbName))
+	}
 	s.logger.Info("database registered",
 		zap.String("group", groupName),
 		zap.String("db", dbName),
 	)
 
-	return nil
+	return err
 }
 
 // buildDBConfig 从 viper 配置创建 mgorm.DBConfig。
@@ -161,11 +164,11 @@ func (s *DbService) createDialector(driverType, dsn string) (gorm.Dialector, err
 
 // Close 释放此服务管理的所有数据库连接。
 func (s *DbService) Close(ctx context.Context) error {
-	if s.mgorm == nil {
+	if s.manager == nil {
 		return nil
 	}
 	// TODO: 当 mgorm 支持时，实现正确的连接清理
-	errs := s.mgorm.Close(ctx)
+	errs := s.manager.Close(ctx)
 	if len(errs) > 0 {
 		err := errors.Join(errs...)
 		s.logger.Error("mgorm service failed to close", zap.Error(err))
@@ -178,15 +181,15 @@ func (s *DbService) Close(ctx context.Context) error {
 // Manager 返回底层的 mgorm.Manager 实例。
 // 如果 Boot 尚未被调用，则返回 nil。
 func (s *DbService) Manager() mgorm.Manager {
-	return s.mgorm
+	return s.manager
 }
 
 func New() *DbService {
 	return &DbService{
-		name:   "db",
-		once:   sync.Once{},
-		config: nil,
-		logger: nil,
-		mgorm:  nil,
+		name:    "db",
+		once:    sync.Once{},
+		config:  nil,
+		logger:  nil,
+		manager: nil,
 	}
 }

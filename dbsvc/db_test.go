@@ -115,7 +115,7 @@ func TestNewDbService(t *testing.T) {
 	assert.Equal(t, Name, svc.name)
 	assert.Nil(t, svc.config)
 	assert.Nil(t, svc.logger)
-	assert.Nil(t, svc.mgorm)
+	assert.Nil(t, svc.manager)
 }
 
 func TestNew(t *testing.T) {
@@ -124,7 +124,7 @@ func TestNew(t *testing.T) {
 	assert.Equal(t, "db", svc.name)
 	assert.Nil(t, svc.config)
 	assert.Nil(t, svc.logger)
-	assert.Nil(t, svc.mgorm)
+	assert.Nil(t, svc.manager)
 }
 
 func TestDbService_Name(t *testing.T) {
@@ -156,11 +156,11 @@ func TestDbService_Boot_Success_SQLite(t *testing.T) {
 	// 验证服务已初始化
 	assert.NotNil(t, svc.config)
 	assert.NotNil(t, svc.logger)
-	assert.NotNil(t, svc.mgorm)
+	assert.NotNil(t, svc.manager)
 	assert.NotNil(t, svc.Manager())
 
 	// 验证数据库组已创建
-	group, err := svc.mgorm.Group("public")
+	group, err := svc.manager.Group("public")
 	require.NoError(t, err)
 	assert.NotNil(t, group)
 
@@ -200,7 +200,7 @@ func TestDbService_Boot_Multiple_Groups_And_DBs(t *testing.T) {
 	require.NoError(t, err)
 
 	// 验证第一个组
-	publicGroup, err := svc.mgorm.Group("public")
+	publicGroup, err := svc.manager.Group("public")
 	require.NoError(t, err)
 	assert.NotNil(t, publicGroup)
 	commonDB, err := publicGroup.Get(ctx, "common")
@@ -208,7 +208,7 @@ func TestDbService_Boot_Multiple_Groups_And_DBs(t *testing.T) {
 	assert.NotNil(t, commonDB)
 
 	// 验证第二个组
-	businessGroup, err := svc.mgorm.Group("business")
+	businessGroup, err := svc.manager.Group("business")
 	require.NoError(t, err)
 	assert.NotNil(t, businessGroup)
 	testData1DB, err := businessGroup.Get(ctx, "test_data_1")
@@ -237,14 +237,14 @@ func TestDbService_Boot_Idempotent(t *testing.T) {
 	err1 := svc.Boot(ctx)
 	require.NoError(t, err1)
 
-	mgorm1 := svc.mgorm
+	mgorm1 := svc.manager
 
 	// 第二次 Boot 应该是幂等的
 	err2 := svc.Boot(ctx)
 	assert.NoError(t, err2)
 
 	// mgorm 应该是同一个实例
-	assert.Equal(t, mgorm1, svc.mgorm)
+	assert.Equal(t, mgorm1, svc.manager)
 
 	// 清理
 	err := svc.Close(ctx)
@@ -275,7 +275,7 @@ func TestDbService_Boot_EmptyConfig(t *testing.T) {
 	err := svc.Boot(ctx)
 	// 空配置应该成功，但不会注册任何数据库
 	assert.NoError(t, err)
-	assert.NotNil(t, svc.mgorm)
+	assert.NotNil(t, svc.manager)
 }
 
 func TestDbService_Boot_InvalidConfig_MissingGroupName(t *testing.T) {
@@ -469,7 +469,7 @@ func TestDbService_registerDB_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// 验证注册成功
-	group, err := svc.mgorm.Group("public")
+	group, err := svc.manager.Group("public")
 	require.NoError(t, err)
 	assert.NotNil(t, group)
 	db, err := group.Get(ctx, "common")
@@ -496,7 +496,7 @@ func TestDbService_Boot_WithDurationConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	// 验证配置被正确解析
-	assert.NotNil(t, svc.mgorm)
+	assert.NotNil(t, svc.manager)
 
 	// 清理
 	err = svc.Close(ctx)
@@ -546,11 +546,11 @@ func TestDbService_Integration_FullLifecycle(t *testing.T) {
 	assert.NotNil(t, svc.Manager())
 
 	// 3. 验证数据库连接可用
-	publicGroup := svc.mgorm.MustGroup("public")
+	publicGroup := svc.manager.MustGroup("public")
 	db1 := publicGroup.MustGet(ctx, "db1")
 	assert.NotNil(t, db1)
 
-	privateGroup := svc.mgorm.MustGroup("private")
+	privateGroup := svc.manager.MustGroup("private")
 	db2 := privateGroup.MustGet(ctx, "db2")
 	assert.NotNil(t, db2)
 
