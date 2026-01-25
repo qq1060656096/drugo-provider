@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/qq1060656096/bizutil v0.0.5
-	github.com/qq1060656096/drugo v0.0.0-20260120124745-941781b4ffb0
+	github.com/qq1060656096/drugo v0.0.6
 	github.com/qq1060656096/mgorm v0.0.6
 	github.com/qq1060656096/mgredis v0.0.4
 	github.com/spf13/viper v1.21.0
