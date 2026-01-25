@@ -150,8 +150,8 @@ github.com/qq1060656096/bizutil v0.0.5 h1:9HKNOP7WIz97a6d+j9/RoRW2QX45ak7NwijaPR
 github.com/qq1060656096/bizutil v0.0.5/go.mod h1:gZPxywyV0tFhvM7K+bIWn8ZMXFSQP7MltRhxYrcg9/M=
 github.com/qq1060656096/drugo v0.0.0-20260120124745-941781b4ffb0 h1:7fy4BHbKuE0ohMQmtu6lPVbz8dYd5dlAzlo7YGJ8qpQ=
 github.com/qq1060656096/drugo v0.0.0-20260120124745-941781b4ffb0/go.mod h1:YAm2FMivqCm1tfrnA39vasXcF19x0v07X0wFPJuA+bA=
-github.com/qq1060656096/mgorm v0.0.4 h1:S/V3+2U0XKmEWflaZOxer/xtGl5jfK1BaoreKM5X9is=
-github.com/qq1060656096/mgorm v0.0.4/go.mod h1:gz4FWMNS9JDUpn3NXh6zKLEWxVWEMPgGex4iAapRChA=
+github.com/qq1060656096/mgorm v0.0.5 h1:MqJNe8SynvgbhEf8ZUwOO4TXUJat3E/vfp0qN8AKbQA=
+github.com/qq1060656096/mgorm v0.0.5/go.mod h1:gz4FWMNS9JDUpn3NXh6zKLEWxVWEMPgGex4iAapRChA=
 github.com/qq1060656096/mgredis v0.0.4 h1:CrJYNLatQER4KUKFgiRoAI8nlmBmsXmw7/vabiEwtSE=
 github.com/qq1060656096/mgredis v0.0.4/go.mod h1:l6DtKyIt6ijqhWepNHQiGVuOEwGmBOG/oVVEP2TLQo8=
 github.com/quic-go/qpack v0.6.0 h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8=

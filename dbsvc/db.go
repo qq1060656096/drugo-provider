@@ -143,9 +143,18 @@ func (s *DbService) buildDBConfig(v *viper.Viper) (mgorm.DBConfig, error) {
 		Name:            v.GetString("name"),
 		DriverType:      v.GetString("driver_type"),
 		DSN:             v.GetString("dsn"),
+		Host:            v.GetString("host"),
+		Port:            v.GetInt("port"),
+		User:            v.GetString("user"),
+		Password:        v.GetString("password"),
+		DBName:          v.GetString("db_name"),
+		Charset:         v.GetString("charset"),
 		MaxIdleConns:    v.GetInt("max_idle_conns"),
 		MaxOpenConns:    v.GetInt("max_open_conns"),
 		ConnMaxLifetime: v.GetDuration("conn_max_lifetime"),
+	}
+	if cfg.DSN == "" {
+		cfg.DSN = cfg.AutoDsn()
 	}
 
 	dialector, err := s.createDialector(cfg.DriverType, cfg.DSN)
