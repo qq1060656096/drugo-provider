@@ -5,7 +5,7 @@ redis:
   # =========================
   default:
     # 实例名称（用于注册表 / 日志 / 监控标识）
-    name: "session"
+    name: "default"
     # Redis 部署模式
     # standalone | sentinel | cluster
     mode: "standalone"
@@ -37,7 +37,7 @@ redis:
     password: ""
     # 使用的 Redis DB 编号
     # 建议不同业务使用不同 DB 隔离
-    db: 0
+    db: 1
 
 
   # =========================
@@ -55,4 +55,4 @@ redis:
     # Redis 访问密码
     password: ""
     # 使用独立 DB，避免与 session 数据混用
-    db: 1
+    db: 2

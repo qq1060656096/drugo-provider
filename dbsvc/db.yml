@@ -1,69 +1,83 @@
 db:
   # =========================
-  # 默认组
-  # 用途：系统基础数据、公共表、测试环境等
+  # 默认数据库组
+  # 用途：
+  # - 非 SaaS / 单库模式
+  # - 简单项目或只有一个业务数据库的场景
   # =========================
   default:
-    test_common:
-      # 数据库实例名称（用于注册表/日志/监控标识）
-      name: "test_common"
-      # 数据库连接 DSN
-      # 格式: user:password@protocol(address)/dbname?params
-      dsn: "root:123456@tcp(172.16.123.1:3306)/test_common?charset=utf8mb4&parseTime=true"
-      # 数据库类型
-      # 支持 mysql、postgres、sqlite、sqlserver 等
+    # 默认数据库实例
+    default:
+      # 数据库实例标识
+      # 用于 DB 注册、日志、监控等（非 db_name）
+      name: "default"
+      # 支持：mysql、postgres、sqlite、sqlserver 等
       driver_type: "mysql"
+      host: "172.16.123.1"
+      port: 3306
+      user: "root"
+      password: "123456"
+      # 实际使用的数据库名
+      db_name: "sys"
+      # 字符集（可选，默认 utf8mb4）
+      charset: "utf8mb4"
       # 最大空闲连接数
       max_idle_conns: 10
       # 最大打开连接数
       max_open_conns: 100
       # 连接最大生命周期（秒）
-      # 超过时间连接会被回收
+      # 超过该时间的连接会被回收
       conn_max_lifetime: 3600
+
   # =========================
-  # 公共组
-  # 用途：系统基础数据、公共表、测试环境等
+  # 公共数据库组
+  # 用途：
+  # - 公共表
+  # - 基础数据
+  # - 多业务共享数据
   # =========================
   public:
-    test_common:
-      # 数据库实例名称（用于注册表/日志/监控标识）
-      name: "test_common"
-      # 数据库连接 DSN
-      # 格式: user:password@protocol(address)/dbname?params
-      dsn: "root:123456@tcp(172.16.123.1:3306)/test_common?charset=utf8mb4&parseTime=true"
+    # 默认公共库实例
+    default:
+      # 数据库实例标识
+      name: "default"
       # 数据库类型
-      # 支持 mysql、postgres、sqlite、sqlserver 等
+      # 支持：mysql、postgres、sqlite、sqlserver 等
       driver_type: "mysql"
+      host: "172.16.123.1"
+      port: 3306
+      user: "root"
+      password: "123456"
+      # 实际业务数据库名
+      db_name: "test_common"
+      charset: "utf8mb4"
       # 最大空闲连接数
       max_idle_conns: 10
       # 最大打开连接数
       max_open_conns: 100
       # 连接最大生命周期（秒）
-      # 超过时间连接会被回收
       conn_max_lifetime: 3600
 
-
   # =========================
-  # 业务组
-  # 用途：各业务模块独立数据库
-  # 例如：订单库、用户库、日志库等
+  # 业务数据库组
+  # 用途：
+  # - 多业务 / 多租户场景
+  # - 每个业务可映射到不同数据库
   # =========================
   business:
-    # 业务库 1
-    test_data_1:
-      # 数据库实例名称（用于注册表/日志/监控标识）
-      name: "test_data_1"
-      # 数据库连接 DSN
-      # 格式: user:password@protocol(address)/dbname?params
-      dsn: "root:123456@tcp(172.16.123.1:3306)/test_data_1?charset=utf8mb4&parseTime=true"
-      # 数据库类型
-      # 支持 mysql、postgres、sqlite、sqlserver 等
+    # 默认业务库实例（可扩展为 data_1 / data_2 / data_n）
+    default:
+      # 数据库实例标识
+      name: "default"
+      # 支持：mysql、postgres、sqlite、sqlserver 等
       driver_type: "mysql"
-      # 最大空闲连接数
+      host: "172.16.123.1"
+      port: 3306
+      user: "root"
+      password: "123456"
+      # 实际业务数据库名
+      db_name: "test_data_1"
+      charset: "utf8mb4"
       max_idle_conns: 10
-      # 最大打开连接数
       max_open_conns: 100
-      # 连接最大生命周期（秒）
-      # 超过时间连接会被回收
       conn_max_lifetime: 3600
-
