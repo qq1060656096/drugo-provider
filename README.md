@@ -11,6 +11,7 @@
 - **数据库服务** (`dbsvc`): 基于 `mgorm` 的多数据库连接管理
 - **Redis 服务** (`redissvc`): 基于 `mgredis` 的 Redis 缓存管理  
 - **Gin 服务** (`ginsrv`): 基于 `gin-gonic` 的 Web 框架集成
+- **便捷函数** (`pkg/svc`): 简化数据库和Redis连接获取的语义化封装
 - **配置驱动**: 通过配置文件灵活管理各种服务
 - **优雅关闭**: 支持服务的优雅启动和关闭
 - **日志集成**: 内置 `zap` 日志支持
@@ -24,6 +25,25 @@ go get github.com/qq1060656096/drugo-provider
 ## 🔧 快速开始
 
 ### 基本使用
+
+#### 使用便捷函数（推荐）
+
+```go
+import(
+    "github.com/qq1060656096/drugo-provider/pkg/svc"
+)
+
+// 获取默认数据库连接
+db := svc.MustDefaultDB(c)
+companyInfo := make(map[string]interface{})
+db.Raw("select * from common_company where company_id= 218908").Scan(&companyInfo)
+
+// 获取会话 Redis 客户端
+sessionRedis := svc.MustSessionRedis(c)
+r, err := sessionRedis.Set(c.Request.Context(), "api", "demo", 0).Result()
+```
+
+#### 使用原始服务
 
 ```go
 import(
@@ -142,6 +162,52 @@ gin:
 ```
 
 ## 🛠️ API 文档
+
+### 便捷服务函数 (pkg/svc)
+
+为了简化开发，`pkg/svc` 包提供了便捷的函数来快速获取数据库和Redis连接：
+
+#### 数据库便捷函数
+
+```go
+import "github.com/qq1060656096/drugo-provider/pkg/svc"
+
+// 获取数据库服务实例
+dbSvc := svc.MustDB(c)
+
+// 获取默认数据库连接
+db := svc.MustDefaultDB(c)
+db.Find(&users)
+
+// 获取公共库连接
+publicDB := svc.MustPublicDB(c)
+publicDB.Raw("SELECT * FROM common_config").Scan(&configs)
+
+// 获取指定业务数据库连接
+businessDB := svc.MustBusinessDB(c, "data_1")
+businessDB.Create(&businessData)
+```
+
+#### Redis 便捷函数
+
+```go
+import "github.com/qq1060656096/drugo-provider/pkg/svc"
+
+// 获取 Redis 服务实例
+redisSvc := svc.MustRedis(c)
+
+// 获取默认 Redis 客户端
+redisClient := svc.MustDefaultRedis(c)
+redisClient.Set(ctx, "key", "value", time.Hour)
+
+// 获取购物车 Redis 客户端
+cartRedis := svc.MustCartRedis(c)
+cartRedis.LPush(ctx, "cart:123", "item1")
+
+// 获取会话 Redis 客户端
+sessionRedis := svc.MustSessionRedis(c)
+sessionRedis.Set(ctx, "session:abc", "userdata", 30*time.Minute)
+```
 
 ### 数据库服务 API
 
