@@ -4,14 +4,15 @@
 [![Go Version](https://img.shields.io/badge/Go-1.25+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-基于 `drugo` 框架的服务提供者包，提供了数据库、Redis 缓存和 Gin Web 服务的集成支持。
+基于 `drugo` 框架的服务提供者包，提供了数据库、Redis 缓存、国际化和 Gin Web 服务的集成支持。
 
 ## 🚀 特性
 
 - **数据库服务** (`dbsvc`): 基于 `mgorm` 的多数据库连接管理
 - **Redis 服务** (`redissvc`): 基于 `mgredis` 的 Redis 缓存管理  
+- **国际化服务** (`i18nsvc`): 基于 `mi18n` 的多语言翻译支持
 - **Gin 服务** (`ginsrv`): 基于 `gin-gonic` 的 Web 框架集成
-- **便捷函数** (`pkg/svc`): 简化数据库和Redis连接获取的语义化封装
+- **便捷函数** (`pkg/svc`): 简化数据库、Redis和i18n服务获取的语义化封装
 - **配置驱动**: 通过配置文件灵活管理各种服务
 - **优雅关闭**: 支持服务的优雅启动和关闭
 - **日志集成**: 内置 `zap` 日志支持
@@ -41,6 +42,11 @@ db.Raw("select * from common_company where company_id= 218908").Scan(&companyInf
 // 获取会话 Redis 客户端
 sessionRedis := svc.MustSessionRedis(c)
 r, err := sessionRedis.Set(c.Request.Context(), "api", "demo", 0).Result()
+
+// 获取国际化服务并翻译
+welcome := svc.MustT(c, "zh", "welcome", nil) // 输出: 欢迎
+data := map[string]any{"Name": "张三"}
+greeting := svc.MustT(c, "zh", "greeting", data) // 输出: 你好，张三！
 ```
 
 #### 使用原始服务
@@ -71,6 +77,7 @@ import (
     "github.com/qq1060656096/drugo/drugo"
     "github.com/qq1060656096/drugo-provider/dbsvc"
     "github.com/qq1060656096/drugo-provider/ginsrv"
+    "github.com/qq1060656096/drugo-provider/i18nsvc"
     "github.com/qq1060656096/drugo-provider/redissvc"
 )
 
@@ -80,6 +87,7 @@ func main() {
     // 注册服务
     app.Register(dbsvc.New())
     app.Register(redissvc.New())
+    app.Register(i18nsvc.New())
     app.Register(ginsrv.New())
     
     // 启动应用
@@ -111,6 +119,36 @@ db:
       max_idle_conns: 10
       max_open_conns: 100
       conn_max_lifetime: 1h
+```
+
+### 国际化服务 (i18nsvc)
+
+提供基于 `mi18n` 的多语言翻译支持，支持多种文件格式和模板变量。
+
+**配置示例**:
+
+```yaml
+i18n:
+  locale_dir: "locale"    # 翻译文件目录
+  default_lang: "en"       # 默认语言
+```
+
+**翻译文件示例**:
+
+locale/zh.json
+```json
+[
+  { "id": "welcome", "translation": "欢迎" },
+  { "id": "greeting", "translation": "你好，{{.Name}}！" }
+]
+```
+
+locale/en.json
+```json
+[
+  { "id": "welcome", "translation": "Welcome" },
+  { "id": "greeting", "translation": "Hello, {{.Name}}!" }
+]
 ```
 
 ### Redis 服务 (redissvc)
@@ -165,7 +203,7 @@ gin:
 
 ### 便捷服务函数 (pkg/svc)
 
-为了简化开发，`pkg/svc` 包提供了便捷的函数来快速获取数据库和Redis连接：
+为了简化开发，`pkg/svc` 包提供了便捷的函数来快速获取数据库、Redis和i18n服务：
 
 #### 数据库便捷函数
 
@@ -207,6 +245,39 @@ cartRedis.LPush(ctx, "cart:123", "item1")
 // 获取会话 Redis 客户端
 sessionRedis := svc.MustSessionRedis(c)
 sessionRedis.Set(ctx, "session:abc", "userdata", 30*time.Minute)
+```
+
+#### 国际化便捷函数
+
+```go
+import "github.com/qq1060656096/drugo-provider/pkg/svc"
+
+// 获取i18n服务实例
+i18nSvc := svc.MustI18n(c)
+
+// 基本翻译
+welcome := svc.MustT(c, "zh", "welcome", nil) // 输出: 欢迎
+
+// 带变量的翻译
+data := map[string]any{"Name": "张三"}
+greeting := svc.MustT(c, "zh", "greeting", data) // 输出: 你好，张三！
+
+// 使用Context翻译
+ctxWithLang := svc.MustWithLang(c, "zh")
+c.Request = c.Request.WithContext(ctxWithLang)
+message := svc.MustTCtx(c, "welcome", nil) // 输出: 欢迎
+
+// 获取当前语言
+lang := svc.MustLang(c) // 输出: zh
+
+// 获取支持的语言列表
+languages := svc.MustGetSupportedLanguages(c)
+fmt.Printf("支持的语言: %v", languages)
+
+// 重新加载翻译文件（在翻译文件更新后）
+if err := svc.MustReloadI18n(c); err != nil {
+    log.Printf("重新加载失败: %v", err)
+}
 ```
 
 ### 数据库服务 API
@@ -290,6 +361,7 @@ go test ./...
 go test ./dbsvc
 go test ./redissvc  
 go test ./ginsrv
+go test ./i18nsvc
 ```
 
 ## 📄 许可证
@@ -305,4 +377,5 @@ go test ./ginsrv
 - [drugo 框架](https://github.com/qq1060656096/drugo)
 - [mgorm](https://github.com/qq1060656096/mgorm)
 - [mgredis](https://github.com/qq1060656096/mgredis)
+- [mi18n](https://github.com/qq1060656096/mi18n)
 - [Gin Web 框架](https://github.com/gin-gonic/gin)

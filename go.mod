@@ -1,6 +1,6 @@
 module github.com/qq1060656096/drugo-provider
 
-go 1.25.0
+go 1.25.4
 
 require (
 	github.com/gin-gonic/gin v1.11.0
@@ -10,6 +10,7 @@ require (
 	github.com/qq1060656096/drugo v0.0.6
 	github.com/qq1060656096/mgorm v0.0.6
 	github.com/qq1060656096/mgredis v0.0.4
+	github.com/qq1060656096/mi18n v0.0.0-20260214101545-6f1da44b359e
 	github.com/redis/go-redis/v9 v9.17.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
@@ -23,6 +24,7 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
+	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.14.2 // indirect
 	github.com/bytedance/sonic/loader v0.4.0 // indirect
@@ -56,6 +58,7 @@ require (
 	github.com/microsoft/go-mssqldb v1.9.6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/nicksnyder/go-i18n/v2 v2.6.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
@@ -86,7 +89,5 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace (
 //	github.com/qq1060656096/mgorm => ../mgorm
-	github.com/qq1060656096/bizutil => ../bizutil
-)
+replace github.com/qq1060656096/bizutil => ../bizutil
