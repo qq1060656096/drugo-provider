@@ -53,7 +53,8 @@ func OKMsg(c *gin.Context, data any, msg string) {
 //   - code: 业务错误码，用于前端判断具体错误类型
 //   - msg: 错误消息描述
 func Fail(c *gin.Context, code int, msg string, details any) {
-	write(c, http.StatusOK, eresp.ErrorResp(code, "", msg, details))
+	httpStatus := errcode.HTTPStatusFromInt(code)
+	write(c, httpStatus, eresp.ErrorResp(code, "", msg, details))
 }
 
 // Err 根据 error 自动生成响应。

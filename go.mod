@@ -6,7 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/jinzhu/gorm v1.9.16
-	github.com/qq1060656096/bizutil v0.0.5
+	github.com/qq1060656096/bizutil v0.0.9
 	github.com/qq1060656096/drugo v0.0.6
 	github.com/qq1060656096/mgorm v0.0.6
 	github.com/qq1060656096/mgredis v0.0.4
@@ -88,6 +88,3 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-//	github.com/qq1060656096/mgorm => ../mgorm
-replace github.com/qq1060656096/bizutil => ../bizutil

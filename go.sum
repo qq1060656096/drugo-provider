@@ -164,6 +164,8 @@ github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c/go.mod h1:7rwL4CYBLnjL
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/qq1060656096/bizutil v0.0.9 h1:PWWkOsBb61LjZKvE1tWUSxD1yv9LDdOLFCbTHTjehc0=
+github.com/qq1060656096/bizutil v0.0.9/go.mod h1:CW1pk10tNw3pZY0HdaLnH2/abfZEitF8HV7Yvx2J17U=
 github.com/qq1060656096/drugo v0.0.6 h1:FxBZXG4DwboupPR3TAnRLmWFnhsPA+Qi1BR2EQ9xl0M=
 github.com/qq1060656096/drugo v0.0.6/go.mod h1:YAm2FMivqCm1tfrnA39vasXcF19x0v07X0wFPJuA+bA=
 github.com/qq1060656096/mgorm v0.0.6 h1:HWkMhXSbahpW+1k+g2am6/YaR4vXyli1EzOTsdjCV6M=
