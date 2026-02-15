@@ -21,7 +21,7 @@ go get github.com/qq1060656096/drugo-provider/i18nsvc
 
 ```yaml
 i18n:
-  locale_dir: "locale"          # 翻译文件目录
+  locale_dir: "locales"          # 翻译文件目录
   default_lang: "en"             # 默认语言
 ```
 

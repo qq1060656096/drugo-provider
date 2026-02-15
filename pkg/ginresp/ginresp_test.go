@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/qq1060656096/bizutil/eresp"
 	"github.com/qq1060656096/bizutil/errcode"
 	"github.com/stretchr/testify/assert"
 )
@@ -118,7 +119,7 @@ func TestFail(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			Fail(c, tt.code, tt.msg)
+			Fail(c, tt.code, tt.msg, nil)
 
 			assert.Equal(t, tt.expected, w.Code)
 			assert.Contains(t, w.Body.String(), `"code":`+fmt.Sprintf("%d", tt.code))
@@ -154,7 +155,7 @@ func TestErr(t *testing.T) {
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
 
-			Err(c, tt.err)
+			Err(c, tt.err, nil)
 
 			assert.Equal(t, tt.expected, w.Code)
 			assert.Contains(t, w.Body.String(), `"code":`)
@@ -172,7 +173,7 @@ func TestErr_WithErrorCode(t *testing.T) {
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 
-	Err(c, err)
+	Err(c, err, nil)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), `"code":1014000001`)
@@ -214,7 +215,7 @@ func TestAbortFail(t *testing.T) {
 		assert.True(t, ginCtx.IsAborted())
 	})
 	r.GET("/test", func(ginCtx *gin.Context) {
-		AbortFail(ginCtx, 1001, "test error")
+		AbortFail(ginCtx, 1001, "test error", nil)
 	})
 
 	// 模拟请求
@@ -238,7 +239,7 @@ func TestAbortErr(t *testing.T) {
 	})
 	r.GET("/test", func(ginCtx *gin.Context) {
 		err := errors.New("test error")
-		AbortErr(ginCtx, err)
+		AbortErr(ginCtx, err, nil)
 	})
 
 	// 模拟请求
@@ -365,6 +366,278 @@ func TestWrite_WithoutTraceID(t *testing.T) {
 	assert.NotContains(t, w.Body.String(), "trace_id")
 }
 
+func TestFail_WithDetails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name     string
+		code     int
+		msg      string
+		details  any
+		expected int
+	}{
+		{
+			name:     "with string details",
+			code:     1001,
+			msg:      "invalid param",
+			details:  "field name is required",
+			expected: http.StatusOK,
+		},
+		{
+			name:     "with map details",
+			code:     1002,
+			msg:      "validation failed",
+			details:  map[string]string{"field": "email", "error": "invalid format"},
+			expected: http.StatusOK,
+		},
+		{
+			name:     "with slice details",
+			code:     1003,
+			msg:      "multiple errors",
+			details:  []string{"error1", "error2"},
+			expected: http.StatusOK,
+		},
+		{
+			name:     "with nil details",
+			code:     1004,
+			msg:      "no details",
+			details:  nil,
+			expected: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			Fail(c, tt.code, tt.msg, tt.details)
+
+			assert.Equal(t, tt.expected, w.Code)
+			assert.Contains(t, w.Body.String(), `"code":`+fmt.Sprintf("%d", tt.code))
+			assert.Contains(t, w.Body.String(), `"message":"`+tt.msg+`"`)
+
+			if tt.details != nil {
+				assert.Contains(t, w.Body.String(), `"details":`)
+			} else {
+				assert.NotContains(t, w.Body.String(), `"details":`)
+			}
+		})
+	}
+}
+
+func TestErr_WithDetails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name     string
+		err      error
+		details  any
+		expected int
+	}{
+		{
+			name:     "generic error with string details",
+			err:      errors.New("generic error"),
+			details:  "additional context",
+			expected: http.StatusInternalServerError,
+		},
+		{
+			name:     "error code with map details",
+			err:      errcode.New(1014000001, "test error"),
+			details:  map[string]any{"field": "username", "value": "invalid"},
+			expected: http.StatusBadRequest,
+		},
+		{
+			name:     "nil error with details",
+			err:      nil,
+			details:  "fallback details",
+			expected: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			Err(c, tt.err, tt.details)
+
+			assert.Equal(t, tt.expected, w.Code)
+			assert.Contains(t, w.Body.String(), `"code":`)
+
+			if tt.details != nil && tt.err != nil {
+				assert.Contains(t, w.Body.String(), `"details":`)
+			}
+		})
+	}
+}
+
+func TestAbortFail_WithDetails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	w := httptest.NewRecorder()
+
+	// 创建一个 gin 引擎来测试 abort 功能
+	r := gin.New()
+	r.Use(func(ginCtx *gin.Context) {
+		ginCtx.Next()
+		assert.True(t, ginCtx.IsAborted())
+	})
+	r.GET("/test", func(ginCtx *gin.Context) {
+		details := map[string]string{"field": "email", "error": "invalid format"}
+		AbortFail(ginCtx, 1001, "validation error", details)
+	})
+
+	// 模拟请求
+	req, _ := http.NewRequest("GET", "/test", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"code":1001`)
+	assert.Contains(t, w.Body.String(), `"details":`)
+}
+
+func TestAbortErr_WithDetails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	w := httptest.NewRecorder()
+
+	// 创建一个 gin 引擎来测试 abort 功能
+	r := gin.New()
+	r.Use(func(ginCtx *gin.Context) {
+		ginCtx.Next()
+		assert.True(t, ginCtx.IsAborted())
+	})
+	r.GET("/test", func(ginCtx *gin.Context) {
+		err := errcode.New(1014000001, "test error")
+		details := "error context"
+		AbortErr(ginCtx, err, details)
+	})
+
+	// 模拟请求
+	req, _ := http.NewRequest("GET", "/test", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), `"code":1014000001`)
+	assert.Contains(t, w.Body.String(), `"details":`)
+}
+
+func TestResolveStatus_MoreErrorCodes(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected int
+	}{
+		{
+			name:     "401 unauthorized",
+			err:      errcode.New(1014010001, "unauthorized"), // 1(占位符) + 01(模块) + 401(HTTP状态) + 0001(顺序)
+			expected: http.StatusUnauthorized,
+		},
+		{
+			name:     "403 forbidden",
+			err:      errcode.New(1014030001, "forbidden"), // 1(占位符) + 01(模块) + 403(HTTP状态) + 0001(顺序)
+			expected: http.StatusForbidden,
+		},
+		{
+			name:     "404 not found",
+			err:      errcode.New(1014040001, "not found"), // 1(占位符) + 01(模块) + 404(HTTP状态) + 0001(顺序)
+			expected: http.StatusNotFound,
+		},
+		{
+			name:     "422 unprocessable entity",
+			err:      errcode.New(1014220001, "unprocessable"), // 1(占位符) + 01(模块) + 422(HTTP状态) + 0001(顺序)
+			expected: http.StatusUnprocessableEntity,
+		},
+		{
+			name:     "429 too many requests",
+			err:      errcode.New(1014290001, "rate limit"), // 1(占位符) + 01(模块) + 429(HTTP状态) + 0001(顺序)
+			expected: http.StatusTooManyRequests,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := resolveStatus(tt.err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestWrite_EdgeCases(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	t.Run("nil context panic", func(t *testing.T) {
+		// 这个测试需要特殊处理，因为 write 需要 non-nil context
+		assert.Panics(t, func() {
+			write(nil, http.StatusOK, eresp.OKResp("test", ""))
+		})
+	})
+
+	t.Run("empty trace ID", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set(TraceIDKey, "")
+
+		OK(c, "test data")
+		assert.NotContains(t, w.Body.String(), "trace_id")
+	})
+
+	t.Run("non-string trace ID", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Set(TraceIDKey, 12345)
+
+		OK(c, "test data")
+		assert.NotContains(t, w.Body.String(), "trace_id")
+	})
+}
+
+func TestOKMsg_EdgeCases(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	tests := []struct {
+		name     string
+		data     any
+		msg      string
+		expected int
+	}{
+		{
+			name:     "complex data structure",
+			data:     map[string]any{"user": map[string]string{"name": "test", "email": "test@example.com"}, "roles": []string{"admin", "user"}},
+			msg:      "complex data",
+			expected: http.StatusOK,
+		},
+		{
+			name:     "empty message with complex data",
+			data:     []int{1, 2, 3, 4, 5},
+			msg:      "",
+			expected: http.StatusOK,
+		},
+		{
+			name:     "nil data with message",
+			data:     nil,
+			msg:      "no data available",
+			expected: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+
+			OKMsg(c, tt.data, tt.msg)
+
+			assert.Equal(t, tt.expected, w.Code)
+			assert.Contains(t, w.Body.String(), `"code":0`)
+			if tt.msg != "" {
+				assert.Contains(t, w.Body.String(), `"message":"`+tt.msg+`"`)
+			}
+		})
+	}
+}
+
 // 基准测试
 func BenchmarkOK(b *testing.B) {
 	gin.SetMode(gin.TestMode)
@@ -385,7 +658,7 @@ func BenchmarkFail(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Fail(c, 1001, "benchmark error")
+		Fail(c, 1001, "benchmark error", nil)
 		w.Body.Reset()
 	}
 }
@@ -398,7 +671,7 @@ func BenchmarkErr(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		Err(c, err)
+		Err(c, err, nil)
 		w.Body.Reset()
 	}
 }

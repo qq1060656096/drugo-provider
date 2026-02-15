@@ -52,8 +52,8 @@ func OKMsg(c *gin.Context, data any, msg string) {
 //   - c: Gin 上下文对象
 //   - code: 业务错误码，用于前端判断具体错误类型
 //   - msg: 错误消息描述
-func Fail(c *gin.Context, code int, msg string) {
-	write(c, http.StatusOK, eresp.ErrorResp(code, "", msg, nil))
+func Fail(c *gin.Context, code int, msg string, details any) {
+	write(c, http.StatusOK, eresp.ErrorResp(code, "", msg, details))
 }
 
 // Err 根据 error 自动生成响应。
@@ -61,9 +61,9 @@ func Fail(c *gin.Context, code int, msg string) {
 // 参数：
 //   - c: Gin 上下文对象
 //   - err: 错误对象，支持 errcode.Error 类型和其他标准错误
-func Err(c *gin.Context, err error) {
+func Err(c *gin.Context, err error, details any) {
 	status := resolveStatus(err)
-	resp := eresp.FromError(err, nil)
+	resp := eresp.FromError(err, details)
 	write(c, status, resp)
 }
 
@@ -87,8 +87,8 @@ func AbortOK(c *gin.Context, data any) {
 //   - c: Gin 上下文对象
 //   - code: 业务错误码，用于前端判断具体错误类型
 //   - msg: 错误消息描述
-func AbortFail(c *gin.Context, code int, msg string) {
-	Fail(c, code, msg)
+func AbortFail(c *gin.Context, code int, msg string, details any) {
+	Fail(c, code, msg, details)
 	c.Abort()
 }
 
@@ -97,8 +97,8 @@ func AbortFail(c *gin.Context, code int, msg string) {
 // 参数：
 //   - c: Gin 上下文对象
 //   - err: 错误对象，支持 errcode.Error 类型和其他标准错误
-func AbortErr(c *gin.Context, err error) {
-	Err(c, err)
+func AbortErr(c *gin.Context, err error, details any) {
+	Err(c, err, details)
 	c.Abort()
 }
 
