@@ -1,10 +1,12 @@
 package ginsrv
 
 import (
-	"net/http"
+	"fmt"
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
+	"github.com/qq1060656096/bizutil/errcode"
+	"github.com/qq1060656096/drugo-provider/pkg/ginresp"
 	"github.com/qq1060656096/drugo/log"
 	"go.uber.org/zap"
 )
@@ -22,13 +24,19 @@ func RecoveryLogger(lmg *log.Manager, logName string) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		defer func() {
-			if err := recover(); err != nil {
-
+			if r := recover(); r != nil {
+				var err error
+				switch e := r.(type) {
+				case error:
+					err = e
+				default:
+					err = fmt.Errorf("%v", r)
+				}
 				// ⭐ 获取 trace_id
 				traceID := GetTraceID(c)
 
 				errorLogger.Error("panic recovered",
-					zap.Any("error", err),
+					zap.Any("recoverData", r),
 					zap.ByteString("stack", debug.Stack()),
 					zap.String("trace_id", traceID), // ⭐ 新增
 					zap.String("path", c.Request.URL.Path),
@@ -36,10 +44,9 @@ func RecoveryLogger(lmg *log.Manager, logName string) gin.HandlerFunc {
 					zap.String("ip", c.ClientIP()),
 				)
 
-				c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-					"error":    "internal server error",
-					"trace_id": traceID, // ⭐ 建议返回给客户端
-				})
+				err = errcode.Wrap(1500010001, err, "internal server error")
+				ginresp.AbortErr(c, err, nil)
+				return
 			}
 		}()
 
