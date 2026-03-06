@@ -102,3 +102,82 @@ func AccessLogger(lmg interface{ MustGet(string) *zap.Logger }, accessLogName st
 		accessLogger.Info("request success", fields...)
 	}
 }
+
+// AccessLoggerWithoutBody 是用于记录访问日志但不记录请求和响应body的中间件
+func AccessLoggerWithoutBody(lmg interface{ MustGet(string) *zap.Logger }, accessLogName string, errLogName string) gin.HandlerFunc {
+	if accessLogName == "" {
+		accessLogName = defaultAccessLogName
+	}
+	if errLogName == "" {
+		errLogName = defaultErrorLogName
+	}
+
+	accessLogger := lmg.MustGet(accessLogName)
+	errorLogger := lmg.MustGet(errLogName)
+
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		// ⭐ 获取 trace_id
+		traceID := GetTraceID(c)
+		clientIP := getClientIP(c)
+
+		// ⭐ 记录请求开始时的基本信息
+		accessLogger.Info("request start", []zap.Field{
+			zap.String("trace_id", traceID),
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.String("query", c.Request.URL.RawQuery),
+			zap.String("ip", clientIP),
+			zap.String("user_agent", c.Request.UserAgent()),
+		}...)
+
+		// 处理请求
+		c.Next()
+
+		latency := time.Since(start)
+		statusCode := c.Writer.Status()
+
+		// ⭐ 只有发生错误时才记录错误日志
+		if len(c.Errors) > 0 {
+			errorLogger.Error("request error", []zap.Field{
+				zap.String("trace_id", traceID),
+				zap.Int("status", statusCode),
+				zap.String("method", c.Request.Method),
+				zap.String("path", c.Request.URL.Path),
+				zap.String("ip", clientIP),
+				zap.Duration("latency", latency),
+				zap.Int("size", c.Writer.Size()),
+				zap.String("errors", c.Errors.String()),
+			}...)
+			return
+		}
+
+		// 处理HTTP错误
+		if statusCode >= http.StatusInternalServerError {
+			errorLogger.Error("server error", []zap.Field{
+				zap.String("trace_id", traceID),
+				zap.Int("status", statusCode),
+				zap.String("method", c.Request.Method),
+				zap.String("path", c.Request.URL.Path),
+				zap.String("ip", clientIP),
+				zap.Duration("latency", latency),
+				zap.Int("size", c.Writer.Size()),
+			}...)
+			return
+		} else if statusCode >= http.StatusBadRequest {
+			errorLogger.Warn("client error", []zap.Field{
+				zap.String("trace_id", traceID),
+				zap.Int("status", statusCode),
+				zap.String("method", c.Request.Method),
+				zap.String("path", c.Request.URL.Path),
+				zap.String("ip", clientIP),
+				zap.Duration("latency", latency),
+				zap.Int("size", c.Writer.Size()),
+			}...)
+			return
+		}
+
+		// ⭐ 正常请求不记录成功日志，只记录请求开始时的信息
+	}
+}

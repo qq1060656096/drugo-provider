@@ -14,7 +14,16 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest"
+	"go.uber.org/zap/zaptest/observer"
 )
+
+func fieldsToMap(fields []zapcore.Field) map[string]any {
+	enc := zapcore.NewMapObjectEncoder()
+	for _, f := range fields {
+		f.AddTo(enc)
+	}
+	return enc.Fields
+}
 
 func TestAccessLogger(t *testing.T) {
 	// 设置 gin 为测试模式
@@ -333,6 +342,183 @@ func TestAccessLogger_WithQueryParams(t *testing.T) {
 	// 验证 trace ID 被正确设置
 	traceID := w.Header().Get("X-Request-ID")
 	assert.NotEmpty(t, traceID)
+}
+
+func TestAccessLoggerWithoutBody_SuccessOnlyStartLog(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	accessCore, accessLogs := observer.New(zapcore.InfoLevel)
+	errCore, errLogs := observer.New(zapcore.DebugLevel)
+
+	accessLogger := zap.New(accessCore)
+	errorLogger := zap.New(errCore)
+
+	mockLM := &mockLogManager{
+		accessLogger: accessLogger,
+		errorLogger:  errorLogger,
+	}
+
+	router := gin.New()
+	router.Use(TraceMiddleware("X-Request-ID"))
+	router.Use(AccessLoggerWithoutBody(mockLM, "", ""))
+
+	router.GET("/ok", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
+
+	req := httptest.NewRequest("GET", "/ok?param=value", nil)
+	req.Header.Set("User-Agent", "test-agent")
+	req.RemoteAddr = "1.2.3.4:5678"
+
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	traceID := w.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, traceID)
+
+	assert.Equal(t, 1, accessLogs.Len())
+	assert.Equal(t, 0, errLogs.Len())
+
+	entry := accessLogs.All()[0]
+	assert.Equal(t, zapcore.InfoLevel, entry.Level)
+	assert.Equal(t, "request start", entry.Message)
+
+	m := fieldsToMap(entry.Context)
+	assert.Equal(t, traceID, m["trace_id"])
+	assert.Equal(t, "GET", m["method"])
+	assert.Equal(t, "/ok", m["path"])
+	assert.Equal(t, "param=value", m["query"])
+	assert.Equal(t, "1.2.3.4", m["ip"])
+	assert.Equal(t, "test-agent", m["user_agent"])
+}
+
+func TestAccessLoggerWithoutBody_BusinessError(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	accessCore, _ := observer.New(zapcore.DebugLevel)
+	errCore, errLogs := observer.New(zapcore.DebugLevel)
+
+	accessLogger := zap.New(accessCore)
+	errorLogger := zap.New(errCore)
+
+	mockLM := &mockLogManager{
+		accessLogger: accessLogger,
+		errorLogger:  errorLogger,
+	}
+
+	router := gin.New()
+	router.Use(TraceMiddleware("X-Request-ID"))
+	router.Use(AccessLoggerWithoutBody(mockLM, "gin.access", "gin.error"))
+
+	router.GET("/biz-err", func(c *gin.Context) {
+		_ = c.Error(assert.AnError)
+		c.Status(http.StatusOK)
+	})
+
+	req := httptest.NewRequest("GET", "/biz-err", nil)
+	req.RemoteAddr = "1.2.3.4:5678"
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	traceID := w.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, traceID)
+
+	assert.Equal(t, 1, errLogs.Len())
+	entry := errLogs.All()[0]
+	assert.Equal(t, zapcore.ErrorLevel, entry.Level)
+	assert.Equal(t, "request error", entry.Message)
+
+	m := fieldsToMap(entry.Context)
+	assert.Equal(t, traceID, m["trace_id"])
+	assert.Equal(t, int64(http.StatusOK), m["status"])
+	assert.Equal(t, "GET", m["method"])
+	assert.Equal(t, "/biz-err", m["path"])
+	assert.Equal(t, "1.2.3.4", m["ip"])
+	assert.Contains(t, m["errors"].(string), assert.AnError.Error())
+}
+
+func TestAccessLoggerWithoutBody_HTTP4xx(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	accessCore, _ := observer.New(zapcore.DebugLevel)
+	errCore, errLogs := observer.New(zapcore.DebugLevel)
+
+	accessLogger := zap.New(accessCore)
+	errorLogger := zap.New(errCore)
+
+	mockLM := &mockLogManager{
+		accessLogger: accessLogger,
+		errorLogger:  errorLogger,
+	}
+
+	router := gin.New()
+	router.Use(TraceMiddleware("X-Request-ID"))
+	router.Use(AccessLoggerWithoutBody(mockLM, "gin.access", "gin.error"))
+
+	router.GET("/bad", func(c *gin.Context) {
+		c.Status(http.StatusBadRequest)
+	})
+
+	req := httptest.NewRequest("GET", "/bad", nil)
+	req.RemoteAddr = "1.2.3.4:5678"
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	traceID := w.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, traceID)
+
+	assert.Equal(t, 1, errLogs.Len())
+	entry := errLogs.All()[0]
+	assert.Equal(t, zapcore.WarnLevel, entry.Level)
+	assert.Equal(t, "client error", entry.Message)
+
+	m := fieldsToMap(entry.Context)
+	assert.Equal(t, traceID, m["trace_id"])
+	assert.Equal(t, int64(http.StatusBadRequest), m["status"])
+}
+
+func TestAccessLoggerWithoutBody_HTTP5xx(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	accessCore, _ := observer.New(zapcore.DebugLevel)
+	errCore, errLogs := observer.New(zapcore.DebugLevel)
+
+	accessLogger := zap.New(accessCore)
+	errorLogger := zap.New(errCore)
+
+	mockLM := &mockLogManager{
+		accessLogger: accessLogger,
+		errorLogger:  errorLogger,
+	}
+
+	router := gin.New()
+	router.Use(TraceMiddleware("X-Request-ID"))
+	router.Use(AccessLoggerWithoutBody(mockLM, "gin.access", "gin.error"))
+
+	router.GET("/oops", func(c *gin.Context) {
+		c.Status(http.StatusInternalServerError)
+	})
+
+	req := httptest.NewRequest("GET", "/oops", nil)
+	req.RemoteAddr = "1.2.3.4:5678"
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+	traceID := w.Header().Get("X-Request-ID")
+	assert.NotEmpty(t, traceID)
+
+	assert.Equal(t, 1, errLogs.Len())
+	entry := errLogs.All()[0]
+	assert.Equal(t, zapcore.ErrorLevel, entry.Level)
+	assert.Equal(t, "server error", entry.Message)
+
+	m := fieldsToMap(entry.Context)
+	assert.Equal(t, traceID, m["trace_id"])
+	assert.Equal(t, int64(http.StatusInternalServerError), m["status"])
 }
 
 // LogManager 接口用于模拟 log.Manager
