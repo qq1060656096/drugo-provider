@@ -1,4 +1,3 @@
-
 # drugo-provider
 
 [![Go Version](https://img.shields.io/badge/Go-1.25+-blue.svg)](https://golang.org)
@@ -197,6 +196,41 @@ gin:
     port: 8443
     cert_file: "cert.pem"
     key_file: "key.pem"
+```
+
+**中间件使用示例**：
+
+说明：建议先使用 `ginSvc.SetEngineContextAppVar(app)` 将 `app` 注入到 `gin.Context`，这样在后续 handler 中才能通过 `pkg/svc` 或 `ginsrv.MustGetService` 从请求上下文获取服务。
+
+```go
+import (
+    "context"
+
+    "github.com/qq1060656096/drugo/drugo"
+    "github.com/qq1060656096/drugo-provider/ginsrv"
+)
+
+func main() {
+    ctx := context.Background()
+
+    app := drugo.New()
+
+    app.Register(ginsrv.New())
+
+    ginSvc := drugo.MustGetService[*ginsrv.GinService](app, ginsrv.Name)
+
+    ginSvc.SetEngineContextAppVar(app)
+
+    engine := ginSvc.Engine()
+
+    engine.Use(ginsrv.TraceMiddleware("X-Request-ID"))
+    engine.Use(ginsrv.AccessLoggerWithoutBody(app.Logger(), "gin.access", "gin.error"))
+    engine.Use(ginsrv.RecoveryLogger(app.Logger(), "gin.error"))
+
+    if err := app.Run(ctx); err != nil {
+        panic(err)
+    }
+}
 ```
 
 ## 🛠️ API 文档
